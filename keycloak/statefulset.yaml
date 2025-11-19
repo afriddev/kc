@@ -56,9 +56,13 @@ spec:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_ADMIN_PASSWORD
         
-        # Production mode requirements
+        # --- DYNAMIC PUBLIC HOSTNAME CONFIGURATION ---
         - name: KC_HOSTNAME
-          value: "keycloak.his-keycloak.svc.cluster.local"
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP # This dynamically gets the node's IP
+        - name: KC_HOSTNAME_PORT
+          value: "30801" # The NodePort you are using
         - name: KC_HOSTNAME_STRICT
           value: "false"
         - name: KC_HTTP_ENABLED
