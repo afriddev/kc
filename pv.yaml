@@ -11,11 +11,11 @@ spec:
   storageClassName: keycloak-local-path
   local:
     path: /home/alien/keycloak/postgres
-  nodeAffinity:
-  required:
-    nodeSelectorTerms:
-    - matchExpressions:
-      - key: kubernetes.io/hostname
-        operator: In
-        values:
-        - server 
+  nodeAffinity:                      # ← must be here
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - server
