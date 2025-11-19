@@ -56,15 +56,13 @@ spec:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_ADMIN_PASSWORD
         
-        # --- DYNAMIC PUBLIC HOSTNAME CONFIGURATION ---
+        # --- LOCALHOST HOSTNAME CONFIGURATION ---
         - name: KC_HOSTNAME
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP # This dynamically gets the node's IP
+          value: "localhost" # Use localhost for local browser access
         - name: KC_HOSTNAME_PORT
           value: "30801" # The NodePort you are using
         - name: KC_HOSTNAME_STRICT
-          value: "false"
+          value: "false" # Allows access via other hostnames too
         - name: KC_HTTP_ENABLED
           value: "true"
         
