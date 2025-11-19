@@ -20,7 +20,7 @@ spec:
       containers:
       - name: keycloak
         image: quay.io/keycloak/keycloak:26.0.2
-        args: ["start-dev"]
+        args: ["start"] # <--- THIS IS THE ONLY CHANGE
         env:
         - name: KC_DB
           value: postgres
@@ -42,9 +42,6 @@ spec:
             secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_DB_PASSWORD
-        
-        # These are the correct variables for bootstrapping the first admin user
-        # on a fresh database for Keycloak 26+.
         - name: KC_BOOTSTRAP_ADMIN_USERNAME
           valueFrom:
             secretKeyRef:
@@ -55,18 +52,6 @@ spec:
             secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_ADMIN_PASSWORD
-
-        # The old variables are kept commented out for reference.
-        # - name: KEYCLOAK_ADMIN
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: keycloak-postgres-secrets
-        #       key: KEYCLOAK_ADMIN_USER
-        # - name: KEYCLOAK_ADMIN_PASSWORD
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: keycloak-postgres-secrets
-        #       key: KEYCLOAK_ADMIN_PASSWORD
         ports:
         - containerPort: 8080
         volumeMounts:
