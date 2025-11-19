@@ -1,28 +1,37 @@
 #!/bin/bash
+
 set -e
 
-NS=his-keycloak
+echo "Deploying Keycloak..."
 
-echo "====== Deploying Keycloak HA ======"
+echo "Step 1: Creating namespace..."
+kubectl apply -f 00-namespace/namespace.yaml
 
-kubectl apply -f namespace.yaml
-kubectl apply -f storage-class.yaml
+echo "Step 2: Creating secrets..."
+kubectl apply -f 01-secrets/secrets.yaml
 
-kubectl apply -f pv.yaml
-kubectl apply -f secrets.yaml
+echo "Step 3: Creating storage resources..."
+kubectl apply -f 02-storage/storageclass.yaml
+kubectl apply -f 02-storage/persistent-volumes.yaml
 
-kubectl apply -f postgres/
-kubectl wait --for=condition=ready pod -l app=postgres -n $NS --timeout=180s
+echo "Step 4: Deploying PostgreSQL..."
+kubectl apply -f 03-postgres/postgres-deployment.yaml
 
-kubectl apply -f keycloak/
-kubectl wait --for=condition=ready pod -l app=keycloak -n $NS --timeout=240s
+echo "Waiting for PostgreSQL to be ready..."
+kubectl wait --for=condition=ready pod -l component=postgres -n keycloak --timeout=300s
 
-kubectl get pods -n $NS
-kubectl get pvc -n $NS
-kubectl get pv
+echo "Step 5: Deploying Keycloak StatefulSet..."
+kubectl apply -f 04-keycloak/keycloak-statefulset.yaml
 
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+echo "Waiting for Keycloak pods to be ready..."
+kubectl wait --for=condition=ready pod -l component=keycloak -n keycloak --timeout=600s
+
 echo ""
-echo "Keycloak URL:  http://$NODE_IP:30801"
-echo "Username: admin  Password: admin@123"
-echo "Data stored under: /home/alien/keycloak"
+echo "Deployment complete!"
+echo ""
+echo "Check status with:"
+echo "  kubectl get pods -n keycloak"
+echo ""
+echo "Access Keycloak:"
+echo "  kubectl port-forward -n keycloak svc/keycloak 8080:8080"
+echo "  Then open: http://localhost:8080"

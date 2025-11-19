@@ -1,9 +1,13 @@
 #!/bin/bash
-set -e
 
-echo "Preparing persistent storage folder for Keycloak and Postgres..."
+echo "Creating directory structure at /home/alien/keycloak..."
 sudo mkdir -p /home/alien/keycloak/postgres
+sudo mkdir -p /home/alien/keycloak/keycloak-0
+sudo mkdir -p /home/alien/keycloak/keycloak-1
+
+echo "Setting permissions..."
 sudo chmod -R 777 /home/alien/keycloak
 
-echo "✓ /home/alien/keycloak prepared"
-echo "Run: ./deploy.sh"
+echo "Setup complete!"
+echo "Directory structure created:"
+ls -la /home/alien/keycloak
