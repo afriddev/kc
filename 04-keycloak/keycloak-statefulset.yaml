@@ -54,6 +54,7 @@ metadata:
 spec:
   serviceName: keycloak-headless
   replicas: 2
+  podManagementPolicy: OrderedReady
   selector:
     matchLabels:
       app: keycloak
@@ -128,19 +129,28 @@ spec:
             path: /health/ready
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 10
         livenessProbe:
           httpGet:
             path: /health/live
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 90
+          initialDelaySeconds: 180
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 5
+          failureThreshold: 10
+        startupProbe:
+          httpGet:
+            path: /health/started
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
   volumeClaimTemplates:
   - metadata:
       name: keycloak-data
