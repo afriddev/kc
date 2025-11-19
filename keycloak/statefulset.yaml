@@ -52,7 +52,7 @@ spec:
               key: KEYCLOAK_ADMIN_USER
         - name: KC_BOOTSTRAP_ADMIN_PASSWORD
           valueFrom:
-            se  cretKeyRef:
+            secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_ADMIN_PASSWORD
         
@@ -63,7 +63,6 @@ spec:
           value: "false"
         - name: KC_HTTP_ENABLED
           value: "true"
-        # The KC_PROXY setting has been removed as it is deprecated and was causing an error
         
         ports:
         - containerPort: 8080
