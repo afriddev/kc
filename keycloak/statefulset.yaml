@@ -58,7 +58,7 @@ spec:
         
         # --- LOCALHOST HOSTNAME CONFIGURATION ---
         - name: KC_HOSTNAME
-          value: "localhost" # Use localhost for local browser access
+          value: "104.154.187.72" # Use localhost for local browser access
         - name: KC_HOSTNAME_PORT
           value: "30801" # The NodePort you are using
         - name: KC_HOSTNAME_STRICT
