@@ -85,7 +85,6 @@ spec:
           - "--cache-stack=kubernetes"
           - "--http-enabled=true"
           - "--hostname-strict=false"
-          - "--hostname-strict-https=false"
         env:
         - name: KEYCLOAK_ADMIN
           valueFrom:
