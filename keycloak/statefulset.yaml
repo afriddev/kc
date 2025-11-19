@@ -20,8 +20,9 @@ spec:
       containers:
       - name: keycloak
         image: quay.io/keycloak/keycloak:26.0.2
-        args: ["start"] # <--- THIS IS THE ONLY CHANGE
+        args: ["start"]
         env:
+        # Database configuration
         - name: KC_DB
           value: postgres
         - name: KC_DB_URL_HOST
@@ -42,6 +43,8 @@ spec:
             secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_DB_PASSWORD
+        
+        # Bootstrap admin for first-time setup
         - name: KC_BOOTSTRAP_ADMIN_USERNAME
           valueFrom:
             secretKeyRef:
@@ -52,6 +55,17 @@ spec:
             secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_ADMIN_PASSWORD
+        
+        # Production mode requirements
+        - name: KC_HOSTNAME
+          value: "keycloak.his-keycloak.svc.cluster.local"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_PROXY
+          value: "edge"
+        
         ports:
         - containerPort: 8080
         volumeMounts:
