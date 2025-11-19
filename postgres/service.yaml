@@ -4,9 +4,10 @@ metadata:
   name: postgres
   namespace: his-keycloak
 spec:
-  ports:
-    - port: 5432
-      targetPort: 5432
+  clusterIP: None
   selector:
     app: postgres
-  clusterIP: None
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
