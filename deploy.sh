@@ -23,6 +23,9 @@ kubectl wait --for=condition=ready pod -l component=postgres -n keycloak --timeo
 echo "Step 5: Deploying Keycloak StatefulSet..."
 kubectl apply -f 04-keycloak/keycloak-statefulset.yaml
 
+echo "Step 6: Creating NodePort service..."
+kubectl apply -f 04-keycloak/keycloak-nodeport-service.yaml
+
 echo "Waiting for Keycloak pods to be ready..."
 kubectl wait --for=condition=ready pod -l component=keycloak -n keycloak --timeout=600s
 
@@ -31,7 +34,7 @@ echo "Deployment complete!"
 echo ""
 echo "Check status with:"
 echo "  kubectl get pods -n keycloak"
+echo "  kubectl get svc -n keycloak"
 echo ""
-echo "Access Keycloak:"
-echo "  kubectl port-forward -n keycloak svc/keycloak 8080:8080"
-echo "  Then open: http://localhost:8080"
+echo "Access Keycloak externally:"
+echo "  http://<your-node-ip>:30080"
