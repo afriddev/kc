@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: his-keycloak-postgresql
+data:
+  postgresql.conf: |
+    max_connections = 100
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 4MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    log_timezone = 'UTC'
+    timezone = 'UTC'
+  init-keycloak-db.sh: |
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        CREATE DATABASE keycloak WITH ENCODING 'UTF8' LC_COLLATE='en_US.UTF-8' LC_CTYPE='en_US.UTF-8';
+        CREATE USER keycloak WITH PASSWORD '${KEYCLOAK_DB_PASSWORD}';
+        GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
+        ALTER DATABASE keycloak OWNER TO keycloak;
+        \c keycloak
+        GRANT ALL ON SCHEMA public TO keycloak;
+    EOSQL
