@@ -3,16 +3,11 @@ kind: Job
 metadata:
   name: keycloak-db-init
   namespace: his-keycloak
-  annotations:
-    # Restart policy for idempotency (re-run if failed)
-    "helm.sh/hook": "post-install,post-upgrade"
-    "helm.sh/hook-weight": "5"  # Run after Postgres starts
-    "helm.sh/hook-delete-policy": "hook-succeeded"
 spec:
-  backoffLimit: 3  # Retry up to 3 times if fails
+  backoffLimit: 5  # Increased retries for robustness
   template:
     spec:
-      restartPolicy: Never  # Job doesn't restart on failure (use backoffLimit instead)
+      restartPolicy: Never
       containers:
       - name: init-db
         image: postgres:17-alpine
@@ -20,22 +15,28 @@ spec:
         - /bin/sh
         - -c
         - |
-          # Wait for Postgres service to be reachable
-          echo "Waiting for Postgres to be ready..."
-          for i in {1..30}; do
-            if nc -z postgres 5432; then
-              echo "Postgres is ready!"
+          # Initial delay for service stability
+          echo "Initial wait for Postgres service..."
+          sleep 10
+
+          # Retry loop for Postgres connection using psql (more reliable than nc)
+          echo "Attempting to connect and initialize DB (up to 10 retries)..."
+          for i in {1..10}; do
+            if PGPASSWORD=$(POSTGRES_PASSWORD) psql -h postgres -U $(POSTGRES_USER) -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+              echo "Postgres connection successful! Initializing DB on attempt $i."
               break
             fi
-            echo "Waiting for Postgres... ($i/30)"
-            sleep 2
+            echo "Connection failed on attempt $i/10. Retrying in 5s..."
+            sleep 5
           done
-          if ! nc -z postgres 5432; then
-            echo "Timeout: Postgres not ready after 60s"
+
+          # Fail if all retries exhausted
+          if ! PGPASSWORD=$(POSTGRES_PASSWORD) psql -h postgres -U $(POSTGRES_USER) -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "FATAL: Failed to connect to Postgres after 10 retries."
             exit 1
           fi
 
-          # Now connect and init DB/user
+          # Run DB init SQL
           set -e
           PGPASSWORD=$(POSTGRES_PASSWORD) psql -h postgres -U $(POSTGRES_USER) -d postgres -v ON_ERROR_STOP=1 <<EOSQL
           DO \$\$
@@ -83,24 +84,8 @@ spec:
             secretKeyRef:
               name: keycloak-postgres-secrets
               key: KEYCLOAK_DB_PASSWORD
-        # Resources for reliability
         resources:
           requests:
             cpu: "100m"
             memory: "128Mi"
-      # Use initContainer to ensure service is available (optional, but adds robustness)
-      initContainers:
-      - name: wait-for-postgres
-        image: busybox:1.35
-        command:
-        - /bin/sh
-        - -c
-        - |
-          echo "Waiting for Postgres service..."
-          for i in {1..60}; do
-            if nslookup postgres.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local >/dev/null 2>&1; then
-              echo "Service DNS ready!"
-              break
-            fi
-            sleep 1
-          done
+      # No initContainer now; handled in main script for simplicity
