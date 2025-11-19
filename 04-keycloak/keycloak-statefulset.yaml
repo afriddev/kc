@@ -6,7 +6,6 @@ metadata:
   namespace: keycloak
   labels:
     app: keycloak
-    component: keycloak
 spec:
   clusterIP: None
   ports:
@@ -14,13 +13,12 @@ spec:
       targetPort: 8080
       protocol: TCP
       name: http
-    - port: 7800
-      targetPort: 7800
+    - port: 7600
+      targetPort: 7600
       protocol: TCP
       name: jgroups
   selector:
     app: keycloak
-    component: keycloak
 
 ---
 apiVersion: v1
@@ -30,7 +28,6 @@ metadata:
   namespace: keycloak
   labels:
     app: keycloak
-    component: keycloak
 spec:
   type: ClusterIP
   ports:
@@ -40,7 +37,6 @@ spec:
       name: http
   selector:
     app: keycloak
-    component: keycloak
 
 ---
 apiVersion: apps/v1
@@ -50,7 +46,6 @@ metadata:
   namespace: keycloak
   labels:
     app: keycloak
-    component: keycloak
 spec:
   serviceName: keycloak-headless
   replicas: 2
@@ -58,13 +53,14 @@ spec:
   selector:
     matchLabels:
       app: keycloak
-      component: keycloak
   template:
     metadata:
       labels:
         app: keycloak
-        component: keycloak
     spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
       initContainers:
       - name: wait-for-postgres
         image: busybox:1.36
@@ -78,96 +74,107 @@ spec:
             done
             echo "PostgreSQL is ready!"
       containers:
-      - name: keycloak
-        image: quay.io/keycloak/keycloak:26.0
-        args:
-          - "start"
-          - "--cache-stack=kubernetes"
-          - "--http-enabled=true"
-          - "--hostname-strict=false"
-        env:
-        - name: KEYCLOAK_ADMIN
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-admin-secret
-              key: KEYCLOAK_ADMIN
-        - name: KEYCLOAK_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-admin-secret
-              key: KEYCLOAK_ADMIN_PASSWORD
-        - name: KC_DB
-          value: "postgres"
-        - name: KC_DB_URL
-          value: "jdbc:postgresql://postgres.keycloak.svc.cluster.local:5432/keycloak"
-        - name: KC_DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-postgres-secret
-              key: POSTGRES_USER
-        - name: KC_DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: keycloak-postgres-secret
-              key: POSTGRES_PASSWORD
-        - name: KC_HEALTH_ENABLED
-          value: "true"
-        - name: KC_METRICS_ENABLED
-          value: "true"
-        - name: KC_LOG_LEVEL
-          value: "INFO"
-        - name: jgroups.dns.query
-          value: "keycloak-headless.keycloak.svc.cluster.local"
-        - name: JAVA_OPTS_APPEND
-          value: "-Djgroups.dns.query=keycloak-headless.keycloak.svc.cluster.local"
-        ports:
-        - name: http
-          containerPort: 8080
-          protocol: TCP
-        - name: jgroups
-          containerPort: 7800
-          protocol: TCP
-        volumeMounts:
-        - name: keycloak-data
-          mountPath: /opt/keycloak/data
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "2Gi"
-            cpu: "2000m"
-        startupProbe:
-          httpGet:
-            path: /health/started
-            port: 8080
-            scheme: HTTP
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 40
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
-            scheme: HTTP
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 10
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8080
-            scheme: HTTP
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 10
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0.2
+          args:
+            - start-dev
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-secret
+                  key: KEYCLOAK_ADMIN
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-secret
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-secret
+                  key: KEYCLOAK_ADMIN
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-admin-secret
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL_HOST
+              value: postgres.keycloak.svc.cluster.local
+            - name: KC_DB_URL_DATABASE
+              value: keycloak
+            - name: KC_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-postgres-secret
+                  key: POSTGRES_USER
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: KC_DB_POOL_MAX_SIZE
+              value: "50"
+            - name: KC_PROXY
+              value: edge
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: "false"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_METRICS_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+            - name: JAVA_OPTS_APPEND
+              value: "-Xms1536m -Xmx1536m -Djgroups.dns.query=keycloak-headless.keycloak.svc.cluster.local"
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: jgroups
+              containerPort: 7600
+          volumeMounts:
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          startupProbe:
+            httpGet:
+              path: /health/started
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 40
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
   volumeClaimTemplates:
   - metadata:
       name: keycloak-data
-      namespace: keycloak
     spec:
       storageClassName: local-storage-keycloak
       accessModes:
