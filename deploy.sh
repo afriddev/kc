@@ -29,7 +29,7 @@ kubectl wait --for=condition=ready pod -l component=postgres -n his-keycloak --t
 
 echo "---------- Deploying Keycloak StatefulSet ----------"
 kubectl apply -f keycloak/keycloak-headless.yaml
-kubectl apply -f keycloak/keycloak-clusterip.yaml
+kubectl apply -f keycloak/keycloak-clusterip-service.yaml
 kubectl apply -f keycloak/keycloak-statefulset.yaml
 kubectl apply -f keycloak/keycloak-nodeport-service.yaml
 
