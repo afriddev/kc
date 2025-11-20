@@ -1,43 +1,9 @@
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-  namespace: keycloak
-spec:
-  storageClassName: local-storage-keycloak
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: keycloak
-  labels:
-    app: keycloak
-    component: postgres
-spec:
-  type: ClusterIP
-  ports:
-    - port: 5432
-      targetPort: 5432
-      protocol: TCP
-      name: postgres
-  selector:
-    app: keycloak
-    component: postgres
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: keycloak
+  namespace: his-keycloak
   labels:
     app: keycloak
     component: postgres

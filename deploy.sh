@@ -5,36 +5,34 @@ set -e
 echo "Deploying Keycloak..."
 
 echo "Step 1: Creating namespace..."
-kubectl apply -f 00-namespace/namespace.yaml
+kubectl apply -f namespace/namespace.yaml
 
-echo "Step 2: Creating secrets..."
-kubectl apply -f 01-secrets/secrets.yaml
+echo "---------- Creating secrets ----------"
+kubectl apply -f secrets/keycloak-secrets.yaml
+kubectl apply -f secrets/postgres-secrets.yaml
 
-echo "Step 3: Creating storage resources..."
-kubectl apply -f 02-storage/storageclass.yaml
-kubectl apply -f 02-storage/persistent-volumes.yaml
+echo "---------- Creating storage resources ---------"
+kubectl apply -f pvc/storageclass.yaml
+kubectl apply -f pvc/keycloak/keycloak-pv0.yaml
+kubectl apply -f pvc/keycloak/keycloak-pv1.yaml
+kubectl apply -f pvc/postgres/postgres-pv0.yaml
 
-echo "Step 4: Deploying PostgreSQL..."
-kubectl apply -f 03-postgres/postgres-deployment.yaml
 
-echo "Waiting for PostgreSQL to be ready..."
-kubectl wait --for=condition=ready pod -l component=postgres -n keycloak --timeout=300s
 
-echo "Step 5: Deploying Keycloak StatefulSet..."
-kubectl apply -f 04-keycloak/keycloak-statefulset.yaml
+echo "---------- Deploying PostgreSQL -----------"
+kubectl apply -f postgres/postgres-storage-claim.yaml
+kubectl apply -f postgres/postgres-clusterip-service.yaml
+kubectl apply -f postgres/postgres-deployment.yaml
 
-echo "Step 6: Creating NodePort service..."
-kubectl apply -f 04-keycloak/keycloak-nodeport-service.yaml
+echo "---------- Waiting for PostgreSQL to be ready ----------"
+kubectl wait --for=condition=ready pod -l component=postgres -n his-keycloak --timeout=300s
 
-echo "Waiting for Keycloak pods to be ready..."
-kubectl wait --for=condition=ready pod -l component=keycloak -n keycloak --timeout=600s
+echo "---------- Deploying Keycloak StatefulSet ----------"
+kubectl apply -f keycloak/keycloak-headless.yaml
+kubectl apply -f keycloak/keycloak-clusterip.yaml
+kubectl apply -f keycloak/keycloak-statefulset.yaml
+kubectl apply -f keycloak/keycloak-nodeport-service.yaml
 
-echo ""
-echo "Deployment complete!"
-echo ""
-echo "Check status with:"
-echo "  kubectl get pods -n keycloak"
-echo "  kubectl get svc -n keycloak"
-echo ""
-echo "Access Keycloak externally:"
-echo "  http://<your-node-ip>:30080"
+
+echo "---------- Waiting for Keycloak pods to be ready ----------"
+kubectl wait --for=condition=ready pod -l component=keycloak -n his-keycloak --timeout=600s
