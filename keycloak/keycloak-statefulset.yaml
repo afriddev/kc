@@ -28,7 +28,7 @@ spec:
           - 'sh'
           - '-c'
           - |
-            until nc -z postgres 5432; do
+            until nc -z postgres.his-keycloak.svc.cluster.local 5432; do
               echo "Waiting for PostgreSQL to be ready..."
               sleep 2
             done
@@ -62,7 +62,7 @@ spec:
             - name: KC_DB
               value: postgres
             - name: KC_DB_URL_HOST
-              value: postgres.keycloak.svc.cluster.local
+              value: postgres.his-keycloak.svc.cluster.local
             - name: KC_DB_URL_DATABASE
               value: keycloak
             - name: KC_DB_USERNAME
@@ -92,7 +92,7 @@ spec:
             - name: KC_PROXY_HEADERS
               value: "xforwarded"
             - name: JAVA_OPTS_APPEND
-              value: "-Xms1536m -Xmx1536m -Djgroups.dns.query=keycloak-headless.keycloak.svc.cluster.local"
+              value: "-Xms1536m -Xmx1536m -Djgroups.dns.query=keycloak-headless.his-keycloak.svc.cluster.local"
           ports:
             - name: http
               containerPort: 8080
