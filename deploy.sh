@@ -12,7 +12,7 @@ kubectl apply -f secrets/keycloak-secrets.yaml
 kubectl apply -f secrets/postgres-secrets.yaml
 
 echo "---------- Creating storage resources ---------"
-kubectl apply -f pvc/storageclass.yaml
+kubectl apply -f pvc/storage-class.yaml
 kubectl apply -f pvc/keycloak/keycloak-pv0.yaml
 kubectl apply -f pvc/keycloak/keycloak-pv1.yaml
 kubectl apply -f pvc/postgres/postgres-pv0.yaml
